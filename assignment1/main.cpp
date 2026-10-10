@@ -25,17 +25,10 @@ const std::string COURSES_NOT_OFFERED_PATH = "student_output/courses_not_offered
  * Hint: Remember what types C++ streams work with?!
  */
 struct Course {
-  /* STUDENT TODO */ title;
-  /* STUDENT TODO */ number_of_units;
-  /* STUDENT TODO */ quarter;
+  std::string title;
+  int number_of_units;
+  std::string quarter;
 };
-
-/**
- * (STUDENT TODO) Look at how the main function (at the bottom of this file)
- * calls `parse_csv`, `write_courses_offered`, and `write_courses_not_offered`.
- * Modify the signatures of these functions so that they work as intended, and then delete this
- * comment!
- */
 
 /**
  * Note:
@@ -58,8 +51,19 @@ struct Course {
  * @param filename The name of the file to parse.
  * @param courses  A vector of courses to populate.
  */
-void parse_csv(std::string filename, std::vector<Course> courses) {
-  /* (STUDENT TODO) Your code goes here... */
+void parse_csv(std::string filename, std::vector<Course>& courses) {
+  std::ifstream file(filename); //need an ifstream because we are reading in input from a file
+  std::string out;
+  getline(file, out); // Skip the first line (column headers). 
+  while(getline(file, out)) { // out now contains one line of the file and returns file.fail(), do this until we hit the end of the file. We fail anyway when we try to getline at the eof.
+    std::vector<std::string> Out(split(out, ',')); // Create a vector of strings containing the 3 elements of out split by comma delimiter
+    std::istringstream numUnits(Out[1]); //need istringstream to read in from the string that needs to change to an int
+    int units; //need something to hold int for when we convert it
+    numUnits >> units; // read the string into an int
+    Course course{Out[0], units, Out[2]}; //finally construct the struct using first and third elements that are strings, and the second which is an int
+    courses.push_back(course); //write this struct to the end of courses
+  }
+  return;
 }
 
 /**
@@ -80,8 +84,22 @@ void parse_csv(std::string filename, std::vector<Course> courses) {
  * @param all_courses A vector of all courses gotten by calling `parse_csv`.
  *                    This vector will be modified by removing all offered courses.
  */
-void write_courses_offered(std::vector<Course> all_courses) {
-  /* (STUDENT TODO) Your code goes here... */
+void write_courses_offered(std::vector<Course>& all_courses) {
+  std::ofstream Offered(COURSES_OFFERED_PATH);
+  std::vector<Course> deleteCourses; //vector to track actual courses to eventually remove when we are done iterating
+  Offered << "Title,Number of Units,Quarter" << "\n";
+  for (int i = 0; i < all_courses.size(); i++) {
+    if (all_courses[i].quarter != "null") { //easier than C
+      // it's offerred, so we add to the file and add to the array to be deleted
+      Offered << all_courses[i].title << "," << all_courses[i].number_of_units << "," << all_courses[i].quarter << "\n"; //this syntax sucks lmao.
+      deleteCourses.push_back(all_courses[i]); //add this index to delete array
+    } //else not offerred, skip. No else statement at all i believe?
+  }
+  // now delete the courses:
+  for (int i = 0; i < deleteCourses.size(); i++){
+    delete_elem_from_vector(all_courses, deleteCourses[i]);
+  }
+  return;
 }
 
 /**
@@ -97,8 +115,13 @@ void write_courses_offered(std::vector<Course> all_courses) {
  *
  * @param unlisted_courses A vector of courses that are not offered.
  */
-void write_courses_not_offered(std::vector<Course> unlisted_courses) {
-  /* (STUDENT TODO) Your code goes here... */
+void write_courses_not_offered(const std::vector<Course>& unlisted_courses) {
+  std::ofstream NotOfferred(COURSES_NOT_OFFERED_PATH);
+  NotOfferred << "Title,Number of Units,Quarter" << "\n";
+  for (int i = 0; i < unlisted_courses.size(); i++) { // just iterate through remaining stuff and copy em over
+    NotOfferred << unlisted_courses[i].title << "," << unlisted_courses[i].number_of_units << "," << unlisted_courses[i].quarter << "\n";
+  }
+  return;
 }
 
 int main() {
